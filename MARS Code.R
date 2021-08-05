@@ -224,11 +224,14 @@ p2 <- vip(tuned_mars, num_features = 40, bar = FALSE, value = "rss") +
 
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 
-# Its important to realize that variable importance will only measure the impact of the prediction error as features are included; however, it does not measure the impact for particular hinge functions created for a given feature. For example, in the above figure, we see that temperature and humidity are the two most influential variables; however, variable importance does not tell us how our model is treating the non-linear patterns for each feature.
+# Its important to realize that variable importance will only measure the impact of the prediction error as features are included; however, it does not measure the impact
+# for particular hinge functions created for a given feature. For example, in the above figure, we see that temperature and humidity are the two most influential variables; 
+# however, variable importance does not tell us how our model is treating the non-linear patterns for each feature.
 
 coef(tuned_mars$finalModel) 
 
-# To better understand the relationship between these features and rentals, we can create partial dependence plots (PDPs) for each feature individually and also an interaction PDP. 
+# To better understand the relationship between these features and rentals, we can create partial dependence plots (PDPs) for each feature individually and also an interaction
+# PDP. 
 
 p1 <- pdp::partial(tuned_mars, pred.var = "temperature", grid.resolution = 10) %>% autoplot() + theme_classic()  + ylab("Rentals")
 p2 <- pdp::partial(tuned_mars, pred.var = "windspeed", grid.resolution = 10) %>% autoplot() + theme_classic() + ylab("Rentals")
@@ -243,12 +246,15 @@ gridExtra::grid.arrange(p1, p2, p3, ncol = 3)
 ##########################
 ##########################
 
-# In two or more dimensions, plotting the convex hull is more informative; it outlines the predictor space region that the model was trained on. When chull = TRUE, the convex hull of the first two dimensions of zs (i.e., the first two variables supplied to pred.var) is computed; for example, if you set chull = TRUE in the call to partial only the region within the convex hull of the first two variables is plotted. Over interpreting the PDP outside of this region is considered extrapolation and is ill-advised
+# In two or more dimensions, plotting the convex hull is more informative; it outlines the predictor space region that the model was trained on. When chull = TRUE, the convex 
+# hull of the first two dimensions of zs (i.e., the first two variables supplied to pred.var) is computed; for example, if you set chull = TRUE in the call to partial only the 
+# region within the convex hull of the first two variables is plotted. Over interpreting the PDP outside of this region is considered extrapolation and is ill-advised
 
 P4 <- pdp::partial(tuned_mars, pred.var = c("temperature", "windspeed"), plot = T, chull = TRUE, grid.resolution = 10)
 P4
 
-# The above figure indicates that dependency of windspeed more than 15 and temperature higher than 70 is extrapotaion and windspeed less than 5 and more than 80 is also extrapolation
+# The above figure indicates that dependency of windspeed more than 15 and temperature higher than 70 is extrapotaion and windspeed less than 5 and more than 80 is also
+#extrapolation
 
 ######################
 ######################
@@ -293,26 +299,4 @@ ggplot(pd, aes(x = temperature, y = windspeed, z = yhat, fill = yhat)) +
   theme_bw() +
   facet_grid(~ season)
 
-###########################
-###########################
-# Predicted Probabilities #
-###########################
-###########################
 
-library(randomForest) # for svm function
-Season_train <- randomForest(season ~ ., data = train, probability = TRUE)
-pred.prob <- function(object, newdata) {
-  pred <- predict(object, newdata, probability = TRUE)
-  prob.season <- attr(pred, which = "probabilities")[, "Summer"]
-  mean(prob.season)
-}
-warnings()
-# PDPs for Petal.Width and Petal.Length on the probability scale
-pdp.pw <- pdp::partial(Season_train, pred.var = "temperature", 
-                       pred.fun = pred.prob, plot = TRUE)
-pdp.pl <- pdp::partial(Season_train, pred.var = "windspeed", pred.fun = pred.prob,
-                  plot = TRUE)
-pdp.pw.pl <- pdp::partial(Season_train, pred.var = c("temperature", "windspeed"),
-                     pred.fun = pred.prob, plot = TRUE)
-# Figure 8
-grid.arrange(pdp.pw, pdp.pl, pdp.pw.pl, ncol = 3)
